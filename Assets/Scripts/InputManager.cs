@@ -14,6 +14,7 @@ namespace AG
         {
             if (!NetworkObject.IsOwner) { return; }
             
+            // Inputs are "backwards" because I wanted that test character looks towards camera
             if (Input.GetKey(KeyCode.A))
             {
                 transform.Translate(Vector3.right * speed * Time.deltaTime, Space.World);
