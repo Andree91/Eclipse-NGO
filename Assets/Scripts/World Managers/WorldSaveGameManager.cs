@@ -9,7 +9,18 @@ namespace AG
     {
         public static WorldSaveGameManager Instance { get; set;}
 
+        [SerializeField] private int mainMenuSceneIndex = 0;
         [SerializeField] private int worldSceneIndex = 1;
+
+        public int GetMainMenuSceneIndex()
+        {
+            return mainMenuSceneIndex;
+        }
+
+        public int GetWorldSceneIndex()
+        {
+            return worldSceneIndex;
+        }
 
         private void Awake()
         {
