@@ -12,11 +12,11 @@ namespace AG
 
         private PlayerControls playerControls;
 
-        public float horizontalInput = 0;
-        public float verticalInput = 0;
-        public float moveAmount = 0;
-
         [SerializeField] private Vector2 movementInput = Vector2.zero;
+
+        public float verticalInput = 0f;
+        public float horizontalInput = 0f;
+        public float moveAmount = 0f;
 
         private void Awake()
         {
@@ -70,6 +70,22 @@ namespace AG
             SceneManager.activeSceneChanged -= OnSceneChange;
         }
 
+        // If window is not active, stop adjusting inputs (good for testing with two project windows/builds)
+        private void OnApplicationFocus(bool focusStatus)
+        {
+            if (enabled)
+            {
+                if (focusStatus)
+                {
+                    playerControls.Enable();
+                }
+                else
+                {
+                    playerControls.Disable();
+                }
+            }
+        }
+
         private void Update()
         {
             HandleMoveInput();
@@ -80,6 +96,16 @@ namespace AG
             horizontalInput = movementInput.x;
             verticalInput = movementInput.y;
             moveAmount = Mathf.Clamp01(Mathf.Abs(horizontalInput) + Mathf.Abs(verticalInput));
+
+            // Clamping values to 0, 0.5 and 1 for better control while using gamepad
+            if (moveAmount <= 0.5f && moveAmount > 0f)
+            {
+                moveAmount = 0.5f; // Character is walking
+            }
+            else if (moveAmount > 0.5f && moveAmount <= 1f)
+            {
+                moveAmount = 1f; // Character is running
+            }
         }
     }
 }

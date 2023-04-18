@@ -8,11 +8,16 @@ namespace AG
     public class PlayerLocomotionManager : CharacterLocomotionManager
     {
         [Header("Movement Stats")]
-        [SerializeField] private float movementSpeed = 5.0f;
+        [SerializeField] private float walkingSpeed = 2.0f;
+        [SerializeField] private float runningSpeed = 5.0f;
         [SerializeField] private float rotationSpeed = 8.0f;
 
-        private Vector3 movementVelocity;
-        private float verticalVelocity;
+        public float verticalMovement = 0f;
+        public float horizontalMovement = 0f;
+        public float moveAmount = 0f;
+
+        private Vector3 moveDirection;
+        private Vector3 targetRotationDirection;
 
         private PlayerManager player;
 
@@ -20,39 +25,66 @@ namespace AG
         {
             base.Awake();
 
-            player = GetComponent<PlayerManager>();
+            if (player == null)
+            {
+                player = GetComponent<PlayerManager>();
+            }
         }
 
         public void HandleAllMovement()
         {
             HandleGroundMovement();
             // Aerial Movement  (Jumping, Falling)
-            // Rotation
+            HandleRotation();
         }
 
         private void HandleGroundMovement()
         {
-            CalculatePlayerMovement();
-            HandlePlayerMovement();
-        }
+            GetVerticalAndHorizontalInputs();
 
-        void CalculatePlayerMovement()
-        {
-            // Movement
-            movementVelocity.Set(player.playerInputManager.horizontalInput, 0.0f, player.playerInputManager.verticalInput);
-            movementVelocity.Normalize();
-            movementVelocity *= movementSpeed * Time.deltaTime;
+            // Move direction is based on player's camera perspective and player's movement inputs
+            moveDirection = PlayerCamera.Instance.transform.forward * verticalMovement;
+            moveDirection += PlayerCamera.Instance.transform.right * horizontalMovement;
+            moveDirection.Normalize();
+            moveDirection.y = 0f;
 
-            // ROTATION
-            if (movementVelocity != Vector3.zero)
+            if (PlayerInputManager.Instance.moveAmount > 0.5f)
             {
-                transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(movementVelocity), rotationSpeed * Time.deltaTime);
+                player.characterController.Move(moveDirection * runningSpeed * Time.deltaTime);
+            }
+            else if (PlayerInputManager.Instance.moveAmount <= 0.5f)
+            {
+                player.characterController.Move(moveDirection * walkingSpeed * Time.deltaTime);
             }
         }
 
-        void HandlePlayerMovement()
+        private void GetVerticalAndHorizontalInputs()
         {
-            player.characterController.Move(movementVelocity);
+            verticalMovement = PlayerInputManager.Instance.verticalInput;
+            horizontalMovement = PlayerInputManager.Instance.horizontalInput;
+        }
+
+        private void HandleRotation()
+        {
+            targetRotationDirection = Vector3.zero;
+            targetRotationDirection = PlayerCamera.Instance.mainCamera.transform.forward * verticalMovement;
+            targetRotationDirection += PlayerCamera.Instance.mainCamera.transform.right * horizontalMovement;
+            targetRotationDirection.Normalize();
+            targetRotationDirection.y = 0f;
+
+            if (targetRotationDirection == Vector3.zero)
+            {
+                targetRotationDirection = transform.forward;
+            }
+
+            Quaternion newRotation = Quaternion.LookRotation(targetRotationDirection);
+            Quaternion targetRotation = Quaternion.Slerp(transform.rotation, newRotation, rotationSpeed * Time.deltaTime);
+            transform.rotation = targetRotation;
+
+            // if (moveDirection != Vector3.zero)
+            // {
+            //     transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(moveDirection), rotationSpeed * Time.deltaTime);
+            // }
         }
     }
 }

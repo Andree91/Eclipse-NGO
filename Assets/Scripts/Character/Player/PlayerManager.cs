@@ -25,7 +25,9 @@ namespace AG
 
         protected override void Update()
         {
-            base.Awake();
+            base.Update();
+
+            if (!IsOwner) { return; }
 
             playerLocomotionManager.HandleAllMovement();
         }
