@@ -138,6 +138,34 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": true
                 }
             ]
+        },
+        {
+            ""name"": ""Player Camera"",
+            ""id"": ""3a21b26a-4c2b-4b3b-a646-a07c29f9f027"",
+            ""actions"": [
+                {
+                    ""name"": ""Look"",
+                    ""type"": ""PassThrough"",
+                    ""id"": ""3bd0a6c8-ea86-4c26-b6c7-42fa7a6892f2"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""f5a45901-d676-4727-a6be-8f129c226cb8"",
+                    ""path"": ""<Mouse>/position"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Look"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
         }
     ],
     ""controlSchemes"": []
@@ -145,6 +173,9 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
         // Player Movement
         m_PlayerMovement = asset.FindActionMap("Player Movement", throwIfNotFound: true);
         m_PlayerMovement_Movement = m_PlayerMovement.FindAction("Movement", throwIfNotFound: true);
+        // Player Camera
+        m_PlayerCamera = asset.FindActionMap("Player Camera", throwIfNotFound: true);
+        m_PlayerCamera_Look = m_PlayerCamera.FindAction("Look", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -233,8 +264,45 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
         }
     }
     public PlayerMovementActions @PlayerMovement => new PlayerMovementActions(this);
+
+    // Player Camera
+    private readonly InputActionMap m_PlayerCamera;
+    private IPlayerCameraActions m_PlayerCameraActionsCallbackInterface;
+    private readonly InputAction m_PlayerCamera_Look;
+    public struct PlayerCameraActions
+    {
+        private @PlayerControls m_Wrapper;
+        public PlayerCameraActions(@PlayerControls wrapper) { m_Wrapper = wrapper; }
+        public InputAction @Look => m_Wrapper.m_PlayerCamera_Look;
+        public InputActionMap Get() { return m_Wrapper.m_PlayerCamera; }
+        public void Enable() { Get().Enable(); }
+        public void Disable() { Get().Disable(); }
+        public bool enabled => Get().enabled;
+        public static implicit operator InputActionMap(PlayerCameraActions set) { return set.Get(); }
+        public void SetCallbacks(IPlayerCameraActions instance)
+        {
+            if (m_Wrapper.m_PlayerCameraActionsCallbackInterface != null)
+            {
+                @Look.started -= m_Wrapper.m_PlayerCameraActionsCallbackInterface.OnLook;
+                @Look.performed -= m_Wrapper.m_PlayerCameraActionsCallbackInterface.OnLook;
+                @Look.canceled -= m_Wrapper.m_PlayerCameraActionsCallbackInterface.OnLook;
+            }
+            m_Wrapper.m_PlayerCameraActionsCallbackInterface = instance;
+            if (instance != null)
+            {
+                @Look.started += instance.OnLook;
+                @Look.performed += instance.OnLook;
+                @Look.canceled += instance.OnLook;
+            }
+        }
+    }
+    public PlayerCameraActions @PlayerCamera => new PlayerCameraActions(this);
     public interface IPlayerMovementActions
     {
         void OnMovement(InputAction.CallbackContext context);
+    }
+    public interface IPlayerCameraActions
+    {
+        void OnLook(InputAction.CallbackContext context);
     }
 }

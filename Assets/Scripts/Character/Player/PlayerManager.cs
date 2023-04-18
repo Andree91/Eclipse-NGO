@@ -9,6 +9,8 @@ namespace AG
         public PlayerInputManager playerInputManager;
         public PlayerLocomotionManager playerLocomotionManager;
 
+        private PlayerCamera playerCamera;
+
         protected override void Awake()
         {
             base.Awake();
@@ -20,6 +22,8 @@ namespace AG
                 playerInputManager = FindObjectOfType<PlayerInputManager>();
             }
 
+            playerCamera = FindObjectOfType<PlayerCamera>();
+
             playerLocomotionManager = GetComponent<PlayerLocomotionManager>();
         }
 
@@ -30,6 +34,9 @@ namespace AG
             if (!IsOwner) { return; }
 
             playerLocomotionManager.HandleAllMovement();
+
+            playerCamera.FollowTarget(this.transform);
+            //playerCamera.HandleCameraRotation();
         }
     }
 }
