@@ -9,8 +9,6 @@ namespace AG
         public PlayerInputManager playerInputManager;
         public PlayerLocomotionManager playerLocomotionManager;
 
-        private PlayerCamera playerCamera;
-
         protected override void Awake()
         {
             base.Awake();
@@ -22,9 +20,18 @@ namespace AG
                 playerInputManager = FindObjectOfType<PlayerInputManager>();
             }
 
-            playerCamera = FindObjectOfType<PlayerCamera>();
-
             playerLocomotionManager = GetComponent<PlayerLocomotionManager>();
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
+
+            // If this is the player object owned by this client
+            if (IsOwner)
+            {
+                PlayerCamera.Instance.player = this;
+            }
         }
 
         protected override void Update()
@@ -34,9 +41,15 @@ namespace AG
             if (!IsOwner) { return; }
 
             playerLocomotionManager.HandleAllMovement();
+        }
 
-            playerCamera.FollowTarget(this.transform);
-            //playerCamera.HandleCameraRotation();
+        protected override void LateUpdate()
+        {
+            base.LateUpdate();
+
+            if (!IsOwner) { return; }
+
+            PlayerCamera.Instance.HandleAllCameraActions();
         }
     }
 }

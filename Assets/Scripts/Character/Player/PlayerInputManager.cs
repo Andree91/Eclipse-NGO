@@ -12,15 +12,16 @@ namespace AG
 
         private PlayerControls playerControls;
 
+        [Header("PLAYER MOVEMENT INPUT")]
         [SerializeField] private Vector2 movementInput = Vector2.zero;
-        [SerializeField] private Vector2 cameraInput = Vector2.zero;
-
         public float verticalInput = 0f;
         public float horizontalInput = 0f;
         public float moveAmount = 0f;
 
-        public float mouseX = 0f;
-        public float mouseY = 0f;
+        [Header("CAMERA MOVEMENT INPUT")]
+        [SerializeField] private Vector2 cameraInput = Vector2.zero;
+        public float cameraVerticalInput = 0f;
+        public float cameraHorizontalInput = 0f;
 
         private void Awake()
         {
@@ -63,7 +64,7 @@ namespace AG
                 playerControls = new PlayerControls();
 
                 playerControls.PlayerMovement.Movement.performed += i => movementInput = i.ReadValue<Vector2>();
-                playerControls.PlayerCamera.Look.performed +=  i => cameraInput = i.ReadValue<Vector2>();
+                playerControls.PlayerCamera.Movement.performed +=  i => cameraInput = i.ReadValue<Vector2>();
             }
 
             playerControls.Enable();
@@ -93,10 +94,11 @@ namespace AG
 
         private void Update()
         {
-            HandleMoveInput();
+            HandlePlayerMovementInput();
+            HandleCameraMovementInput();
         }
 
-        private void HandleMoveInput()
+        private void HandlePlayerMovementInput()
         {
             horizontalInput = movementInput.x;
             verticalInput = movementInput.y;
@@ -111,6 +113,12 @@ namespace AG
             {
                 moveAmount = 1f; // Character is running
             }
+        }
+
+        private void HandleCameraMovementInput()
+        {
+            cameraHorizontalInput = cameraInput.x;
+            cameraVerticalInput = cameraInput.y;
         }
     }
 }

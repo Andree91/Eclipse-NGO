@@ -7,34 +7,36 @@ namespace AG
     public class PlayerCamera : MonoBehaviour
     {
         public static PlayerCamera Instance { get; set; }
-
+        public PlayerManager player;
         public Camera mainCamera;
-
-        [SerializeField] private float followSpeed = 20f;
-        [SerializeField] private float cameraSphereRadius = 0.2f;
-        [SerializeField] private float cameraCollisionOffSet = 0.2f;
-        [SerializeField] private float minimunCollisionOffSet = 0.2f;
-
-        [SerializeField] private float leftAndRightLookSpeed = 250f;
-        [SerializeField] private float leftAndRightAimingLookSpeed = 25f;
-        [SerializeField] private float upAndDownLookSpeed = 250f;
-        [SerializeField] private float upAndDownAimingLookSpeed = 25f;
-
-        [SerializeField] private float minimunLookDownAngle = -35;
-        [SerializeField] private float maximunLookUpAngle = 35;
-
-        private float leftAndRightAngle;
-        private float upAndDownAngle;
-
         [SerializeField] private Transform cameraPivotTransform;
 
-        private Vector3 cameraPos;
-        private Vector3 cameraFollowVelocity = Vector3.zero;
+        [Header("Camera Settings")]
+        [Tooltip("The bigger this number is, the longer for the camera to reach its position duing movement")]
+        [SerializeField] private float cameraSmoothSpeed = 1f;
+        [SerializeField] private float leftAndRightRotationSpeed = 220f;
+        [SerializeField] private float upAndDownRotationSpeed = 220f;
+        [SerializeField] private float cameraCollisonRadius = 0.2f;
+        [SerializeField] private float cameraCollisionCorrectionSpeed = 20f;
 
-        private float targetZPosition;
-        private float defaultZPosition;
+        [SerializeField] private float minimunLookDownAngle = -35f;
+        [SerializeField] private float maximunLookUpAngle = 50f;
 
-        private PlayerManager player;
+        [SerializeField] private LayerMask collideWithLayers;
+
+        // [SerializeField] private float cameraCollisionOffSet = 0.2f; // Maybe use these if you want to tweek camera collision
+        // [SerializeField] private float minimunCollisionOffSet = 0.2f;
+
+        // [SerializeField] private float leftAndRightAimingLookSpeed = 25f;
+        // [SerializeField] private float upAndDownAimingLookSpeed = 25f;
+
+        [Header("Camera Values")]
+        private Vector3 cameraVelocity;
+        private Vector3 cameraObjectPosition; // USED WHEN CAMERA IS COLLIDING, MOVES CAMERA OBJECT TO THIS POSTION WHEN COLLIDING
+        private float leftAndRightLookAngle;
+        private float upAndDownLookAngle;
+        private float defaultCameraZPosition; // USED WHEN CAMERA IS COLLIDING
+        private float targetCameraZPosition;  // USED WHEN CAMERA IS COLLIDING
 
         private void Awake()
         {
@@ -50,59 +52,80 @@ namespace AG
             }
 
             mainCamera = Camera.main;
-            defaultZPosition = mainCamera.transform.localPosition.z;
-
-            player = FindObjectOfType<PlayerManager>();
+            defaultCameraZPosition = mainCamera.transform.localPosition.z;
         }
 
-        public void FollowTarget(Transform targetTransform)
+        public void HandleAllCameraActions()
         {
-            Vector3 targetPosition = Vector3.SmoothDamp(transform.position, targetTransform.position,
-                                                        ref cameraFollowVelocity, Time.deltaTime * followSpeed);
-            transform.position = targetPosition;
+            if (player == null) { return; }
 
-            HandleCameraCollision();
+            HandleFollowTarget();
+            HandleRotations();
+            HandleCollision();
         }
 
-        private void HandleCameraCollision()
+        private void HandleFollowTarget()
         {
-            targetZPosition = defaultZPosition;
+            Vector3 targetCameraPosition = Vector3.SmoothDamp(transform.position, player.transform.position,
+                                                        ref cameraVelocity, cameraSmoothSpeed * Time.deltaTime);
+            transform.position = targetCameraPosition;
+        }
+
+        private void HandleRotations()
+        {
+            // If locked on, force rotation around target
+
+            // Rotation while aiming with bow
+
+            //else Regular rotation
+
+            // ROTATE LEFT AND RIGHT BASED ON HORIZONTAL MOVEMENT OF THE RIGHT STICK / MOUSE
+            leftAndRightLookAngle += (PlayerInputManager.Instance.cameraHorizontalInput * leftAndRightRotationSpeed) * Time.deltaTime;
+            // ROTATE UP AND DOWN BASED ON HORIZONTAL MOVEMENT OF THE RIGHT STICK / MOUSE
+            upAndDownLookAngle -= (PlayerInputManager.Instance.cameraVerticalInput * upAndDownRotationSpeed) * Time.deltaTime;
+            // CLAMP UP AND DOWN BETWEEN MIN AND MAX ANGLE (LEFT AND RIGHT CAN ROTATE 360*)
+            upAndDownLookAngle = Mathf.Clamp(upAndDownLookAngle, minimunLookDownAngle, maximunLookUpAngle);
+
+
+            Vector3 cameraRotation = Vector3.zero;
+            Quaternion targetRotation = Quaternion.identity;
+
+            // ROTATE THIS GAMEOBJECT TO LEFT AND RIGHT
+            cameraRotation.y = leftAndRightLookAngle;
+            targetRotation = Quaternion.Euler(cameraRotation);
+            transform.rotation = targetRotation;
+
+            // ROTATE PIVOT GAMEOBJECT TO UP AND DOWN
+            cameraRotation = Vector3.zero;
+            cameraRotation.x = upAndDownLookAngle;
+            targetRotation = Quaternion.Euler(cameraRotation);
+            cameraPivotTransform.localRotation = targetRotation;
+        }
+
+        private void HandleCollision()
+        {
+            targetCameraZPosition = defaultCameraZPosition;
             RaycastHit hit;
             Vector3 direction = mainCamera.transform.position - cameraPivotTransform.position;
             direction.Normalize();
 
-            if (Physics.SphereCast
-                                (cameraPivotTransform.position, cameraSphereRadius, direction, out hit,
-                                Mathf.Abs(targetZPosition)))
+            if (Physics.SphereCast(cameraPivotTransform.position,
+                                    cameraCollisonRadius,
+                                    direction,
+                                    out hit,
+                                    Mathf.Abs(targetCameraZPosition), collideWithLayers)) // DEFAULT LAYERMASK (WILL CHANGE)
             {
-                float distance = Vector3.Distance(cameraPivotTransform.position, hit.point);
-                targetZPosition = -(distance - cameraCollisionOffSet);
+                float distanceFromHitObject = Vector3.Distance(cameraPivotTransform.position, hit.point);
+                targetCameraZPosition = -(distanceFromHitObject - cameraCollisonRadius);
             }
 
-            if (Mathf.Abs(targetZPosition) < minimunCollisionOffSet)
+            if (Mathf.Abs(targetCameraZPosition) < cameraCollisonRadius)
             {
-                targetZPosition = -minimunCollisionOffSet;
+                targetCameraZPosition = -cameraCollisonRadius;
             }
 
-            cameraPos.z = Mathf.Lerp(mainCamera.transform.localPosition.z, targetZPosition, Time.deltaTime / 0.2f);
-            mainCamera.transform.localPosition = cameraPos;
-        }
-
-        public void HandleCameraRotation()
-        {
-            leftAndRightAngle += (PlayerInputManager.Instance.mouseX * leftAndRightLookSpeed) * Time.deltaTime;
-            upAndDownAngle -= (PlayerInputManager.Instance.mouseY * upAndDownLookSpeed) * Time.deltaTime;
-            upAndDownAngle = Mathf.Clamp(upAndDownAngle, minimunLookDownAngle, maximunLookUpAngle);
-
-            Vector3 rotation = Vector3.zero;
-            rotation.y = leftAndRightAngle;
-            Quaternion targetRotation = Quaternion.Euler(rotation);
-            transform.rotation = targetRotation;
-
-            rotation = Vector3.zero;
-            rotation.x = upAndDownAngle;
-            targetRotation = Quaternion.Euler(rotation);
-            cameraPivotTransform.localRotation = targetRotation;
+            cameraObjectPosition.z = Mathf.Lerp(mainCamera.transform.localPosition.z, targetCameraZPosition, cameraCollisionCorrectionSpeed * Time.deltaTime);
+            mainCamera.transform.localPosition = cameraObjectPosition;
         }
     }
 }

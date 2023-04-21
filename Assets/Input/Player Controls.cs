@@ -144,7 +144,7 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
             ""id"": ""3a21b26a-4c2b-4b3b-a646-a07c29f9f027"",
             ""actions"": [
                 {
-                    ""name"": ""Look"",
+                    ""name"": ""Movement"",
                     ""type"": ""PassThrough"",
                     ""id"": ""3bd0a6c8-ea86-4c26-b6c7-42fa7a6892f2"",
                     ""expectedControlType"": ""Vector2"",
@@ -155,15 +155,103 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
             ],
             ""bindings"": [
                 {
-                    ""name"": """",
-                    ""id"": ""f5a45901-d676-4727-a6be-8f129c226cb8"",
-                    ""path"": ""<Mouse>/position"",
+                    ""name"": ""Right Stick"",
+                    ""id"": ""7a5986e7-61ef-46d6-a08d-8d0a5d97c5bf"",
+                    ""path"": ""2DVector(mode=2)"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Look"",
-                    ""isComposite"": false,
+                    ""action"": ""Movement"",
+                    ""isComposite"": true,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""up"",
+                    ""id"": ""5e04f3ba-d9a8-40cd-bdc2-25ba19b5f1e1"",
+                    ""path"": ""<Mouse>/delta/up"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Movement"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""up"",
+                    ""id"": ""0862e2ba-68b4-4115-baa9-3d1774b9e641"",
+                    ""path"": ""<Gamepad>/rightStick/up"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Movement"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""down"",
+                    ""id"": ""ccfe512d-d771-4895-a187-869fd1ee5da2"",
+                    ""path"": ""<Mouse>/delta/down"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Movement"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""down"",
+                    ""id"": ""f448ad47-8265-4b50-863b-d3950f580b81"",
+                    ""path"": ""<Gamepad>/rightStick/down"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Movement"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""left"",
+                    ""id"": ""f6d8a9bb-5d6b-450e-b12c-df8c7ffb997c"",
+                    ""path"": ""<Mouse>/delta/left"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Movement"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""left"",
+                    ""id"": ""945de1cd-35fb-4cda-be3c-ee87468a8dcf"",
+                    ""path"": ""<Gamepad>/rightStick/left"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Movement"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""right"",
+                    ""id"": ""71d09194-8ddc-486b-b8da-059cc435ea0a"",
+                    ""path"": ""<Mouse>/delta/right"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Movement"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""right"",
+                    ""id"": ""ce790616-d095-47b3-b2e5-b9f803f19066"",
+                    ""path"": ""<Gamepad>/rightStick/right"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Movement"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
                 }
             ]
         }
@@ -175,7 +263,7 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
         m_PlayerMovement_Movement = m_PlayerMovement.FindAction("Movement", throwIfNotFound: true);
         // Player Camera
         m_PlayerCamera = asset.FindActionMap("Player Camera", throwIfNotFound: true);
-        m_PlayerCamera_Look = m_PlayerCamera.FindAction("Look", throwIfNotFound: true);
+        m_PlayerCamera_Movement = m_PlayerCamera.FindAction("Movement", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -268,12 +356,12 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
     // Player Camera
     private readonly InputActionMap m_PlayerCamera;
     private IPlayerCameraActions m_PlayerCameraActionsCallbackInterface;
-    private readonly InputAction m_PlayerCamera_Look;
+    private readonly InputAction m_PlayerCamera_Movement;
     public struct PlayerCameraActions
     {
         private @PlayerControls m_Wrapper;
         public PlayerCameraActions(@PlayerControls wrapper) { m_Wrapper = wrapper; }
-        public InputAction @Look => m_Wrapper.m_PlayerCamera_Look;
+        public InputAction @Movement => m_Wrapper.m_PlayerCamera_Movement;
         public InputActionMap Get() { return m_Wrapper.m_PlayerCamera; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -283,16 +371,16 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
         {
             if (m_Wrapper.m_PlayerCameraActionsCallbackInterface != null)
             {
-                @Look.started -= m_Wrapper.m_PlayerCameraActionsCallbackInterface.OnLook;
-                @Look.performed -= m_Wrapper.m_PlayerCameraActionsCallbackInterface.OnLook;
-                @Look.canceled -= m_Wrapper.m_PlayerCameraActionsCallbackInterface.OnLook;
+                @Movement.started -= m_Wrapper.m_PlayerCameraActionsCallbackInterface.OnMovement;
+                @Movement.performed -= m_Wrapper.m_PlayerCameraActionsCallbackInterface.OnMovement;
+                @Movement.canceled -= m_Wrapper.m_PlayerCameraActionsCallbackInterface.OnMovement;
             }
             m_Wrapper.m_PlayerCameraActionsCallbackInterface = instance;
             if (instance != null)
             {
-                @Look.started += instance.OnLook;
-                @Look.performed += instance.OnLook;
-                @Look.canceled += instance.OnLook;
+                @Movement.started += instance.OnMovement;
+                @Movement.performed += instance.OnMovement;
+                @Movement.canceled += instance.OnMovement;
             }
         }
     }
@@ -303,6 +391,6 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
     }
     public interface IPlayerCameraActions
     {
-        void OnLook(InputAction.CallbackContext context);
+        void OnMovement(InputAction.CallbackContext context);
     }
 }
